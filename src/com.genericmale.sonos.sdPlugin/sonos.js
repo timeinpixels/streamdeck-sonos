@@ -15,9 +15,91 @@ class Sonos {
         RADIO_SHOWS: 'R:0/1'
     }
 
+    static async discover(knownHost) {
+        //find any one Sonos device on the network
+        let firstIp = null;
+
+        //try the known host first
+        if (knownHost && await Sonos.probe(knownHost)) {
+            firstIp = knownHost;
+        }
+
+        //scan subnets if needed
+        if (!firstIp) {
+            const subnets = new Set();
+            if (knownHost) {
+                const parts = knownHost.split('.');
+                if (parts.length === 4) subnets.add(parts.slice(0, 3).join('.'));
+            }
+            for (const s of ['192.168.1', '192.168.0', '192.168.2', '10.0.0', '10.0.1']) {
+                subnets.add(s);
+            }
+
+            for (const subnet of subnets) {
+                const promises = [];
+                for (let i = 1; i <= 254; i++) {
+                    promises.push(Sonos.probe(`${subnet}.${i}`));
+                }
+                const results = await Promise.allSettled(promises);
+                const found = results.find(r => r.status === 'fulfilled' && r.value);
+                if (found) {
+                    firstIp = found.value.ip;
+                    break;
+                }
+            }
+        }
+
+        if (!firstIp) return [];
+
+        //use zone group topology to get rooms (not individual speakers/satellites)
+        try {
+            const sonos = new Sonos();
+            sonos.connect(firstIp, 1400);
+            const zoneState = await sonos.getZoneGroupState();
+
+            const speakers = [];
+            zoneState.querySelectorAll('ZoneGroup').forEach(group => {
+                const coordinatorUUID = group.getAttribute('Coordinator');
+                //select only direct ZoneGroupMember children (not Satellite elements)
+                [...group.children].forEach(child => {
+                    if (child.nodeName !== 'ZoneGroupMember') return;
+                    if (child.getAttribute('Invisible') === '1') return;
+                    const location = child.getAttribute('Location');
+                    const name = child.getAttribute('ZoneName');
+                    if (!location || !name) return;
+                    const match = location.match(/\/\/([^:]+):/);
+                    if (match) {
+                        speakers.push({ip: match[1], name});
+                    }
+                });
+            });
+
+            speakers.sort((a, b) => a.name.localeCompare(b.name));
+            return speakers;
+        } catch {
+            //fallback to just the found speaker
+            const info = await Sonos.probe(firstIp);
+            return info ? [info] : [];
+        }
+    }
+
+    static async probe(ip) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 1500);
+        try {
+            const res = await fetch(`http://${ip}:1400/status/zp`, {signal: controller.signal});
+            clearTimeout(timer);
+            return res.ok;
+        } catch {
+            clearTimeout(timer);
+            return false;
+        }
+    }
+
     constructor() {
         this.avTransport = new SonosService(this, 'AVTransport', 'MediaRenderer/AVTransport');
         this.renderingControl = new SonosService(this, 'RenderingControl', 'MediaRenderer/RenderingControl');
+        this.groupRenderingControl = new SonosService(this, 'GroupRenderingControl', 'MediaRenderer/GroupRenderingControl');
         this.zoneGroupTopology = new SonosService(this, 'ZoneGroupTopology');
         this.contentDirectory = new SonosService(this, 'ContentDirectory', 'MediaServer/ContentDirectory');
     }
@@ -99,6 +181,22 @@ class Sonos {
 
     async setVolume(volume) {
         return this.renderingControl.execute('SetVolume', {Channel: 'Master', DesiredVolume: volume});
+    }
+
+    async getGroupVolume() {
+        return this.groupRenderingControl.execute('GetGroupVolume');
+    }
+
+    async setGroupVolume(volume) {
+        return this.groupRenderingControl.execute('SetGroupVolume', {DesiredVolume: volume});
+    }
+
+    async getGroupMute() {
+        return this.groupRenderingControl.execute('GetGroupMute');
+    }
+
+    async setGroupMute(mute) {
+        return this.groupRenderingControl.execute('SetGroupMute', {DesiredMute: mute ? '1' : '0'});
     }
 
     async setServiceURI(uri, metadata) {

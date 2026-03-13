@@ -3,6 +3,8 @@
   "Name": "Sonos",
   "Category": "Sonos",
   "Localization": {
+    "Speaker": "Speaker",
+    "Discover Speakers": "Discover Speakers",
     "Speaker IP": "Speaker IP",
     "Obtaining Speaker IP Address": "Obtaining Speaker IP Address",
     "Sonos Desktop App": "Sonos Desktop App",
@@ -31,7 +33,8 @@
     "Duration": "Duration",
     "Elapsed": "Elapsed",
     "Remaining": "Remaining",
-    "Paused Text": "Paused Text"
+    "Paused Text": "Paused Text",
+    "Volume Step": "Volume Step"
   },
 
   "com.genericmale.sonos.playpause": {
@@ -81,5 +84,9 @@
   "com.genericmale.sonos.volume": {
     "Name": "Volume Set",
     "Tooltip": "Change the volume to a fixed value."
+  },
+  "com.genericmale.sonos.volumedial": {
+    "Name": "Volume Dial",
+    "Tooltip": "Control volume with the dial. Rotate to adjust, press to mute/unmute."
   }
 }

@@ -249,6 +249,24 @@ class StreamDeck {
     }
 
     /**
+     * Update the feedback displayed on the encoder LCD
+     * @param payload
+     * @param context
+     */
+    setFeedback(payload, context) {
+        this.send('setFeedback', context || this.uuid, payload);
+    }
+
+    /**
+     * Change the encoder LCD layout
+     * @param layout
+     * @param context
+     */
+    setFeedbackLayout(layout, context) {
+        this.send('setFeedbackLayout', context || this.uuid, {layout});
+    }
+
+    /**
      * Set the state of the actions
      * @param context
      * @param state
@@ -421,6 +439,12 @@ class Action {
         this.streamDeck.on(`${this.action}.sendToPlugin`, (event) => this.onSendToPlugin(event));
         this.streamDeck.on(`${this.action}.sendToPropertyInspector`, (event) => this.onSendToPropertyInspector(event));
 
+        //encoder events
+        this.streamDeck.on(`${this.action}.dialRotate`, (event) => this.onDialRotate(event));
+        this.streamDeck.on(`${this.action}.dialDown`, (event) => this.onDialDown(event));
+        this.streamDeck.on(`${this.action}.dialUp`, (event) => this.onDialUp(event));
+        this.streamDeck.on(`${this.action}.touchTap`, (event) => this.onTouchTap(event));
+
         //global events
         this.streamDeck
             .onDidReceiveGlobalSettings((event) => this.onDidReceiveGlobalSettings(event))
@@ -501,6 +525,30 @@ class Action {
      * Callback function for the systemDidWakeUp event, which fires when the computer wakes
      */
     async onSystemDidWakeUp(event) {
+    }
+
+    /**
+     * Callback function for the dialRotate event, which fires when an encoder dial is rotated
+     */
+    async onDialRotate(event) {
+    }
+
+    /**
+     * Callback function for the dialDown event, which fires when an encoder dial is pressed
+     */
+    async onDialDown(event) {
+    }
+
+    /**
+     * Callback function for the dialUp event, which fires when an encoder dial is released
+     */
+    async onDialUp(event) {
+    }
+
+    /**
+     * Callback function for the touchTap event, which fires when the encoder touchscreen is tapped
+     */
+    async onTouchTap(event) {
     }
 
     /**

@@ -43,6 +43,50 @@ function connectElgatoStreamDeckSocket(port, pluginUUID, registerEvent, info, ac
             })
         );
 
+        const discoverBtn = document.getElementById('discover-btn');
+        const speakersSelect = document.getElementById('speakers');
+        const hostInput = document.getElementById('host-input');
+
+        discoverBtn.addEventListener('click', async () => {
+            discoverBtn.textContent = 'Scanning...';
+            discoverBtn.disabled = true;
+            try {
+                const speakers = await Sonos.discover(hostInput.value || null);
+                if (speakers.length > 0) {
+                    speakersSelect.innerHTML = '';
+                    speakers.forEach(({ip, name}) => {
+                        const option = document.createElement('option');
+                        option.value = ip;
+                        option.textContent = `${name} (${ip})`;
+                        option.selected = ip === hostInput.value;
+                        speakersSelect.appendChild(option);
+                    });
+                    speakersSelect.style.display = '';
+                    hostInput.style.display = 'none';
+
+                    //update host if selection changed
+                    if (speakersSelect.value && speakersSelect.value !== hostInput.value) {
+                        hostInput.value = speakersSelect.value;
+                        hostInput.dispatchEvent(new Event('input', {bubbles: true}));
+                    }
+
+                    discoverBtn.textContent = 'Rescan';
+                } else {
+                    discoverBtn.textContent = 'No speakers found';
+                    setTimeout(() => { discoverBtn.textContent = 'Discover Speakers'; }, 3000);
+                }
+            } catch {
+                discoverBtn.textContent = 'Scan failed';
+                setTimeout(() => { discoverBtn.textContent = 'Discover Speakers'; }, 3000);
+            }
+            discoverBtn.disabled = false;
+        });
+
+        speakersSelect.addEventListener('change', () => {
+            hostInput.value = speakersSelect.value;
+            hostInput.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+
         streamDeck.getGlobalSettings().then((globalSettings) => {
             //propagate form with persisted data
             FormUtils.setFormValue(globalSettings, globalSettingsForm);

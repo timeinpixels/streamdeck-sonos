@@ -187,6 +187,26 @@
       ],
       "Tooltip": "Change the volume to a fixed value.",
       "UUID": "com.genericmale.sonos.volume"
+    },
+    {
+      "Icon": "images/volume_action",
+      "Name": "Volume Dial",
+      "Controllers": ["Encoder"],
+      "Encoder": {
+        "layout": "$B1",
+        "TriggerDescription": {
+          "Rotate": "Adjust volume",
+          "Push": "Toggle mute",
+          "Touch": "Toggle mute"
+        }
+      },
+      "States": [
+        {
+          "Image": "images/volume_key"
+        }
+      ],
+      "Tooltip": "Control volume with the dial. Rotate to adjust, press to mute/unmute.",
+      "UUID": "com.genericmale.sonos.volumedial"
     }
   ]
 }
